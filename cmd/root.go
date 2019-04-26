@@ -22,6 +22,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"github.com/xztaityozx/t2p/palette"
+	"image/png"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -32,6 +35,16 @@ var rootCmd = &cobra.Command{
 	Use:   "t2p",
 	Short: "",
 	Long:  ``,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		p := palette.NewPalette()
+		img := p.ToImage("abcd",4,1)
+
+		err := png.Encode(os.Stdout, img)
+		if err != nil {
+			logrus.WithError(err).Fatal("Failed encode image")
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
