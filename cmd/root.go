@@ -23,9 +23,6 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/xztaityozx/t2p/nutils"
-	"github.com/xztaityozx/t2p/palette"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -34,6 +31,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/sirupsen/logrus"
+	"github.com/xztaityozx/t2p/nutils"
+	"github.com/xztaityozx/t2p/palette"
 
 	"github.com/spf13/cobra"
 )
@@ -53,21 +54,21 @@ var rootCmd = &cobra.Command{
 		table, _ := cmd.Flags().GetString("table")
 
 		//
-		w,h,box := buildString(args,exe)
+		w, h, box := buildString(args, exe)
 
 		// フラグの指定値が優先
 		if height == 0 {
 			height = h
 		}
 
-		if width == 0{
+		if width == 0 {
 			width = w
 		}
 
 		p := palette.NewPalette(table)
-		img := p.Create(width,height,box)
+		img := p.Create(width, height, box)
 
-		if err := outImage(out,img,size); err != nil {
+		if err := outImage(out, img, size); err != nil {
 			logrus.WithError(err).Fatal("Failed encode image")
 		}
 
@@ -88,34 +89,33 @@ func init() {
 	rootCmd.Flags().BoolP("execute", "e", false, "入力文字列をコマンドとして受け取り実行結果を画像にします")
 	rootCmd.Flags().IntP("width", "W", 0, "出力画像の幅です。defaultは文字列の長さです")
 	rootCmd.Flags().IntP("height", "H", 0, "出力画像の高さです。defaultは1ドットです")
-	rootCmd.Flags().IntP("size","s", 100,"出力画像の拡大率(%)です")
+	rootCmd.Flags().IntP("size", "s", 100, "出力画像の拡大率(%)です")
 	rootCmd.Flags().String("table", "", "変換テーブルを指定できます。合計127ドットのpngファイルが指定できます")
 }
 
-func buildString(args []string, exe bool) (int,int,[]string) {
+func buildString(args []string, exe bool) (int, int, []string) {
 	str := ""
 	if len(args) == 0 {
 		s := bufio.NewScanner(os.Stdin)
 		var b []string
 		for s.Scan() {
-			b=append(b, s.Text())
+			b = append(b, s.Text())
 		}
 		str = strings.Join(b, "\n")
 	} else {
-		str = strings.Join(args," ")
+		str = strings.Join(args, " ")
 	}
 
 	if exe {
 		command := str
-		out, err := exec.Command("bash","-c",command).Output()
+		out, err := exec.Command("bash", "-c", command).Output()
 		if err != nil {
-			logrus.WithError(err).Fatal("Failed execute command: ",command)
+			logrus.WithError(err).Fatal("Failed execute command: ", command)
 		}
 		str = string(out)
 	}
 
-
-	l := strings.Split(str,"\n")
+	l := strings.Split(str, "\n")
 	m := 0
 	for _, v := range l {
 		m = nutils.IntMax(m, len(v))
@@ -126,7 +126,7 @@ func buildString(args []string, exe bool) (int,int,[]string) {
 func outImage(path string, src *image.RGBA, size int) error {
 
 	var fp *os.File
-	var format = "png"
+	var format = ".png"
 	if len(path) == 0 {
 		fp = os.Stdout
 	} else {
@@ -142,12 +142,12 @@ func outImage(path string, src *image.RGBA, size int) error {
 
 	img := palette.NewZoom(size).ScaleUp(src)
 
-	if format==".png" {
+	if format == ".png" {
 		return png.Encode(fp, img)
 	} else if format == ".jpg" {
 		return jpeg.Encode(fp, img, nil)
 	} else if format == ".gif" {
-		return gif.Encode(fp,img,nil)
+		return gif.Encode(fp, img, nil)
 	} else {
 		logrus.Fatal("t2p does not support file type: ", format)
 	}
