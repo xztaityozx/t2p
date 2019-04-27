@@ -89,7 +89,7 @@ func init() {
 	rootCmd.Flags().BoolP("execute", "e", false, "入力文字列をコマンドとして受け取り実行結果を画像にします")
 	rootCmd.Flags().IntP("width", "W", 0, "出力画像の幅です。defaultは文字列の長さです")
 	rootCmd.Flags().IntP("height", "H", 0, "出力画像の高さです。defaultは1ドットです")
-	rootCmd.Flags().IntP("size", "s", 100, "出力画像の拡大率(%)です")
+	rootCmd.Flags().IntP("size", "s", 1, "出力画像の1ドットをn*nに拡大します")
 	rootCmd.Flags().String("table", "", "変換テーブルを指定できます。合計127ドットのpngファイルが指定できます")
 }
 
