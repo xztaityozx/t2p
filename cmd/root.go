@@ -93,7 +93,14 @@ func init() {
 	rootCmd.Flags().String("table", "", "変換テーブルを指定できます。合計127ドットのpngファイルが指定できます")
 }
 
+// buildString は入力文字列の横幅、縦幅、文字列自身をスライスとしたものを返す。
+// 引数、あるいは標準入力の文字列（またはそれをシェルのコマンドとみなした実行結
+// 果）から、テキストの矩形情報（横幅、縦幅、文字列自身）を返す。
+//
+// exe指定があれば入力の文字列をシェルのコマンドとして実行し、その標準出力を元に
+// 算出する。
 func buildString(args []string, exe bool) (int, int, []string) {
+	// 引数が空の場合は標準入力を矩形の文字列とする。
 	str := ""
 	if len(args) == 0 {
 		s := bufio.NewScanner(os.Stdin)
@@ -101,11 +108,16 @@ func buildString(args []string, exe bool) (int, int, []string) {
 		for s.Scan() {
 			b = append(b, s.Text())
 		}
+		if err := s.Err(); err != nil {
+			logrus.Fatal("t2p cannot scan stdin: ", err)
+		}
 		str = strings.Join(b, "\n")
 	} else {
 		str = strings.Join(args, " ")
 	}
 
+	// exe(execute)指定があれば、前の処理で取得した文字列をシェルのコマンドとみ
+	// なし、シェルの実行結果で矩形文字列を上書きする
 	if exe {
 		command := str
 		out, err := exec.Command("bash", "-c", command).Output()
@@ -120,11 +132,18 @@ func buildString(args []string, exe bool) (int, int, []string) {
 	for _, v := range l {
 		m = nutils.IntMax(m, len(v))
 	}
+
+	// width, height, box(矩形文字列)
 	return m, len(l), l
 }
 
+// outImage は画像を標準出力、あるいはファイルに出力する。
+// pathが空の場合は標準出力に出力する。pathが未指定の場合はPNGとして出力する。
+//
+// 対応している画像フォーマットはPNG, JPG, GIF。それ以外の画像はサポート対象
+// 外のため、アプリを異常終了させる。
 func outImage(path string, src *image.RGBA, size int) error {
-
+	// 画像の出力先を指定
 	var fp *os.File
 	var format = ".png"
 	if len(path) == 0 {
@@ -142,6 +161,8 @@ func outImage(path string, src *image.RGBA, size int) error {
 
 	img := palette.NewZoom(size).ScaleUp(src)
 
+	// 画像を出力する
+	// pathが未指定のときはPNGとして出力する
 	if format == ".png" {
 		return png.Encode(fp, img)
 	} else if format == ".jpg" {
