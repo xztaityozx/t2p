@@ -32,6 +32,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/sirupsen/logrus"
 	"github.com/xztaityozx/t2p/nutils"
 	"github.com/xztaityozx/t2p/palette"
@@ -53,8 +54,12 @@ var rootCmd = &cobra.Command{
 		size, _ := cmd.Flags().GetInt("size")
 		table, _ := cmd.Flags().GetString("table")
 
-		//
-		w, h, box := buildString(args, exe)
+		// カラーパレットの生成
+		p := palette.NewPalette(table)
+		paletteSize := p.GetPaletteSize()
+
+		// 入力文字列からその横幅、縦幅、生成された矩形文字列を取得
+		w, h, box := buildString(args, exe, paletteSize)
 
 		// フラグの指定値が優先
 		if height == 0 {
@@ -65,7 +70,6 @@ var rootCmd = &cobra.Command{
 			width = w
 		}
 
-		p := palette.NewPalette(table)
 		img := p.Create(width, height, box)
 
 		if err := outImage(out, img, size); err != nil {
@@ -99,7 +103,12 @@ func init() {
 //
 // exe指定があれば入力の文字列をシェルのコマンドとして実行し、その標準出力を元に
 // 算出する。
-func buildString(args []string, exe bool) (int, int, []string) {
+func buildString(args []string, exe bool, paletteSize int) (int, int, []string) {
+	// 0除算は許容できない
+	if paletteSize < 1 {
+		logrus.Fatal("t2p paletteSize is less than 1: paletteSize =", paletteSize)
+	}
+
 	// 引数が空の場合は標準入力を矩形の文字列とする。
 	str := ""
 	if len(args) == 0 {
@@ -127,7 +136,13 @@ func buildString(args []string, exe bool) (int, int, []string) {
 		str = string(out)
 	}
 
-	l := strings.Split(str, "\n")
+	// パレットサイズを超過した文字列をパレットサイズ内に収めるための修正
+	var l []string
+	for _, v := range strings.Split(str, "\n") {
+		v = fixValueThatOverBoundary(v, paletteSize)
+		l = append(l, v)
+	}
+
 	m := 0
 	for _, v := range l {
 		m = nutils.IntMax(m, len(v))
@@ -174,4 +189,24 @@ func outImage(path string, src *image.RGBA, size int) error {
 	}
 
 	return nil
+}
+
+// fixValueThatOverBoundary は文字列のrune文字がboundary値以上のときは値を
+// boundary値以下に丸める。
+//
+// また、rune文字がマルチバイト文字の場合は丸めた文字をその文字の表示上の文字幅
+// 分に複製する。
+//
+// 例: あ をboundary=128で丸めた値は B
+//     あ はマルチバイト文字のため複製する。
+//     よって、あ の場合における戻り値は BB になる。
+func fixValueThatOverBoundary(s string, boundary int) string {
+	var ret []rune
+	for _, v := range []rune(s) {
+		w := runewidth.RuneWidth(v)
+		for i := 0; i < w; i++ {
+			ret = append(ret, rune(int(v)%boundary))
+		}
+	}
+	return string(ret)
 }
