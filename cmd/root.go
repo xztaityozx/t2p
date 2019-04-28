@@ -105,6 +105,9 @@ func buildString(args []string, exe bool) (int, int, []string) {
 		for s.Scan() {
 			b = append(b, s.Text())
 		}
+		if err := s.Err(); err != nil {
+			logrus.Fatal("t2p cannot scan stdin: ", err)
+		}
 		str = strings.Join(b, "\n")
 	} else {
 		str = strings.Join(args, " ")
