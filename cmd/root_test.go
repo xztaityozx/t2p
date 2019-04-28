@@ -4,23 +4,13 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func equalsArray(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := 0; i < len(a); i++ {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
 func TestBuildString(t *testing.T) {
+	as := assert.New(t)
+
 	// 引数有りのときのテストケース
 	{
 		type TestData struct {
@@ -39,7 +29,7 @@ func TestBuildString(t *testing.T) {
 		}
 		for _, v := range tds {
 			w, h, box := buildString(v.args, v.exe)
-			if v.w == w && v.h == h && equalsArray(v.box, box) {
+			if v.w == w && v.h == h && as.Equal(v.box, box) {
 				t.Log(fmt.Sprintf("[OK] %s:", v.desc))
 			} else {
 				var errMsg string
@@ -74,7 +64,7 @@ func TestBuildString(t *testing.T) {
 			os.Stdin = stdinRead
 
 			w, h, box := buildString([]string{}, v.exe)
-			if v.w == w && v.h == h && equalsArray(v.box, box) {
+			if v.w == w && v.h == h && as.Equal(v.box, box) {
 				t.Log(fmt.Sprintf("[OK] %s:", v.desc))
 			} else {
 				var errMsg string
