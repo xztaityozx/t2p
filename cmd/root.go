@@ -93,9 +93,12 @@ func init() {
 	rootCmd.Flags().String("table", "", "変換テーブルを指定できます。合計127ドットのpngファイルが指定できます")
 }
 
+// buildString は入力文字列の横幅、縦幅、文字列自身をスライスとしたものを返す。
 // 引数、あるいは標準入力の文字列（またはそれをシェルのコマンドとみなした実行結
 // 果）から、テキストの矩形情報（横幅、縦幅、文字列自身）を返す。
-// exe指定がアレば入力の文字列をシェルのコマンドとして実行する。
+//
+// exe指定があれば入力の文字列をシェルのコマンドとして実行し、その標準出力を元に
+// 算出する。
 func buildString(args []string, exe bool) (int, int, []string) {
 	// 引数が空の場合は標準入力を矩形の文字列とする。
 	str := ""
@@ -134,8 +137,13 @@ func buildString(args []string, exe bool) (int, int, []string) {
 	return m, len(l), l
 }
 
+// outImage は画像を標準出力、あるいはファイルに出力する。
+// pathが空の場合は標準出力に出力する。pathが未指定の場合はPNGとして出力する。
+//
+// 対応している画像フォーマットはPNG, JPG, GIF。それ以外の画像はサポート対象
+// 外のため、アプリを異常終了させる。
 func outImage(path string, src *image.RGBA, size int) error {
-
+	// 画像の出力先を指定
 	var fp *os.File
 	var format = ".png"
 	if len(path) == 0 {
@@ -153,6 +161,8 @@ func outImage(path string, src *image.RGBA, size int) error {
 
 	img := palette.NewZoom(size).ScaleUp(src)
 
+	// 画像を出力する
+	// pathが未指定のときはPNGとして出力する
 	if format == ".png" {
 		return png.Encode(fp, img)
 	} else if format == ".jpg" {
