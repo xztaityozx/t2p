@@ -93,7 +93,11 @@ func init() {
 	rootCmd.Flags().String("table", "", "変換テーブルを指定できます。合計127ドットのpngファイルが指定できます")
 }
 
+// 引数、あるいは標準入力の文字列（またはそれをシェルのコマンドとみなした実行結
+// 果）から、テキストの矩形情報（横幅、縦幅、文字列自身）を返す。
+// exe指定がアレば入力の文字列をシェルのコマンドとして実行する。
 func buildString(args []string, exe bool) (int, int, []string) {
+	// 引数が空の場合は標準入力を矩形の文字列とする。
 	str := ""
 	if len(args) == 0 {
 		s := bufio.NewScanner(os.Stdin)
@@ -106,6 +110,8 @@ func buildString(args []string, exe bool) (int, int, []string) {
 		str = strings.Join(args, " ")
 	}
 
+	// exe(execute)指定があれば、前の処理で取得した文字列をシェルのコマンドとみ
+	// なし、シェルの実行結果で矩形文字列を上書きする
 	if exe {
 		command := str
 		out, err := exec.Command("bash", "-c", command).Output()
@@ -120,6 +126,8 @@ func buildString(args []string, exe bool) (int, int, []string) {
 	for _, v := range l {
 		m = nutils.IntMax(m, len(v))
 	}
+
+	// width, height, box(矩形文字列)
 	return m, len(l), l
 }
 
