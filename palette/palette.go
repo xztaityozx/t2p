@@ -36,6 +36,11 @@ func NewPalette(path string) Palette {
 	}
 }
 
+// getColorTable は色パレット画像からカラーテーブルを作って返す。
+// 画像ファイルのパスに空文字列を指定すると組み込みの画像データから
+// カラーテーブルを作って返す。
+//
+// なお、このカラーテーブルを作るのに使用可能な画像フォーマットはPNGのみである。
 func getColorTable(path string) []color.Color {
 	var r io.Reader
 	if len(path) == 0 {
@@ -108,4 +113,8 @@ func (p Palette) Create(w, h int, src []string) *image.RGBA {
 	}
 
 	return rt
+}
+
+func (p Palette) GetPaletteSize() int {
+	return len(p.table)
 }
